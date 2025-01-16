@@ -1,6 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { pdfToText } from 'pdf-ts';
+import mammoth from 'mammoth';
 import cosineSimilarity from 'compute-cosine-similarity';
 
 // Function to read text content from a PDF file
@@ -16,6 +17,13 @@ export const readTextContent = async (filePath: string): Promise<string> => {
     const content = await fs.readFile(filePath, 'utf-8');
     console.log(`Extracted text content from ${filePath}:`, content.slice(0, 100)); // Log first 100 characters
     return content;
+};
+
+// Function to read text content from a DOCX file
+export const readDocxContent = async (filePath: string): Promise<string> => {
+    const result = await mammoth.extractRawText({ path: filePath });
+    console.log(`Extracted DOCX content from ${filePath}:`, result.value.slice(0, 100)); // Log first 100 characters
+    return result.value;
 };
 
 // Function to get all files from the data folder
@@ -87,8 +95,10 @@ export const checkPlagiarismAgainstAllFiles = async (uploadedContent: string): P
             fileContent = await readPdfContent(file);
         } else if (file.endsWith('.txt')) {
             fileContent = await readTextContent(file);
+        } else if (file.endsWith('.docx')) {
+            fileContent = await readDocxContent(file);
         } else {
-            // console.log(`Skipping unsupported file type: ${file}`); // Log unsupported file types
+            console.log(`Skipping unsupported file type: ${file}`); // Log unsupported file types
             continue;
         }
 

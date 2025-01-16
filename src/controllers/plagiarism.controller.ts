@@ -2,10 +2,9 @@ import { Request, Response } from 'express';
 import fs from 'fs/promises';
 import path from 'path';
 import multer from 'multer';
-import { checkPlagiarismAgainstAllFiles, readPdfContent, readTextContent } from '../utils/plagiarism.utils';
+import { checkPlagiarismAgainstAllFiles, readPdfContent, readTextContent, readDocxContent } from '../utils/plagiarism.utils';
 import os from 'os';
 import { v4 as uuidv4 } from 'uuid';
-
 
 const storage = multer.memoryStorage();
 export const upload = multer({ storage: storage });
@@ -31,6 +30,11 @@ export const uploadNewData = async (req: Request, res: Response): Promise<any> =
             await fs.unlink(tempFilePath);
         } else if (file.mimetype === 'text/plain') {
             uploadedFileContent = file.buffer.toString('utf-8');
+        } else if (file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+            const tempFilePath = path.join(os.tmpdir(), `${uuidv4()}.docx`);
+            await fs.writeFile(tempFilePath, file.buffer);
+            uploadedFileContent = await readDocxContent(tempFilePath);
+            await fs.unlink(tempFilePath);
         } else {
             return res.status(400).json({ message: 'Unsupported file type' });
         }
@@ -57,4 +61,3 @@ export const uploadNewData = async (req: Request, res: Response): Promise<any> =
         res.status(500).json({ message: 'Error uploading file', error: err });
     }
 };
-
